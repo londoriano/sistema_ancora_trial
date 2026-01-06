@@ -20,7 +20,6 @@ async function verificarLicenca() {
     const diffTime = dataExpiracao - hoje;
     const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // BLOQUEIO FATAL SE EXPIROU
     if (diasRestantes < 0) {
         sessionStorage.clear();
         document.body.innerHTML = `
@@ -58,14 +57,11 @@ function verificarAutenticacao() {
     const isIndex = page === 'index.html' || page === '' || page === '/';
     const logado = sessionStorage.getItem(SESSAO_KEY);
     
-    // 1. Se não está logado, chuta para o index
     if (!logado && !isIndex) {
         window.location.href = 'index.html';
         return;
     }
 
-    // 2. LISTA NEGRA: Páginas que NÃO podem ser acessadas no Trial
-    // Adicione aqui todos os arquivos HTML que devem ser bloqueados
     const PAGINAS_PROIBIDAS = [
         'reserva_emergencia.html', 
         'protecao_patrimonial.html', 
@@ -73,8 +69,8 @@ function verificarAutenticacao() {
     ];
 
     if (PAGINAS_PROIBIDAS.includes(page)) {
-        alert("Acesso Negado: Este módulo é exclusivo da versão PRO."); // Alerta simples pois o DOM pode não estar pronto para modal
-        window.location.href = 'clientes.html'; // Redireciona para área segura
+        alert("Acesso Negado: Este módulo é exclusivo da versão PRO."); 
+        window.location.href = 'clientes.html'; 
     }
 }
 
@@ -109,6 +105,11 @@ function exibirModalPremium(tipo) {
         titulo = "Módulo Avançado";
         texto = "O acesso aos módulos de <strong>Reserva de Emergência, Proteção Patrimonial e Aposentadoria</strong> é exclusivo para assinantes PRO.";
         icone = "bi-lock-fill";
+    } else if (tipo === 'importacao') {
+        // --- NOVA MENSAGEM DE AUTOMAÇÃO ---
+        titulo = "Automação Inteligente";
+        texto = "A importação de lançamentos em lote (JSON) é um recurso de <strong>alta produtividade</strong> exclusivo da versão PRO.<br><br>Pare de digitar manualmente e ganhe tempo!";
+        icone = "bi-lightning-charge-fill";
     }
 
     const modalHtml = `
@@ -155,12 +156,11 @@ function exibirModalPremium(tipo) {
 function verificarLimites(tipoRecurso, qtdAtual = 0) {
     const db = getDB();
     
-    // NOVOS LIMITES (Escassez)
     const LIMITES = {
         'clientes': 4,      
-        'dividas': 3,       // Reduzido para 3
-        'objetivos': 2,     // Reduzido para 2
-        'investimentos': 1  // Reduzido para 1
+        'dividas': 3,       
+        'objetivos': 2,     
+        'investimentos': 1  
     };
 
     if (tipoRecurso === 'clientes') {
@@ -169,7 +169,6 @@ function verificarLimites(tipoRecurso, qtdAtual = 0) {
             return false;
         }
     } else if (['dividas', 'objetivos', 'investimentos'].includes(tipoRecurso)) {
-        // Verifica se a quantidade atual já atingiu o limite
         if (qtdAtual >= LIMITES[tipoRecurso]) {
             exibirModalPremium('limite_recursos');
             return false;
@@ -179,7 +178,7 @@ function verificarLimites(tipoRecurso, qtdAtual = 0) {
     return true; 
 }
 
-// --- UTILITÁRIOS ---
+// --- UTILITÁRIOS GERAIS ---
 function exibirMensagem(texto, tipo = 'sucesso', callback = null) {
     const antigo = document.getElementById('modalAvisoGeral');
     if (antigo) antigo.remove();
@@ -323,12 +322,10 @@ function formatarMoeda(valor) {
     return parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-// --- CONSTRUÇÃO DO MENU LATERAL (COM BLOQUEIO) ---
 function construirMenuLateral(clientId) {
     const container = document.getElementById('conteudoMenuLateral');
     if (!container) return; 
 
-    // Lista de módulos que serão bloqueados visualmente e funcionalmente
     const ARQUIVOS_BLOQUEADOS = [
         'reserva_emergencia.html', 
         'protecao_patrimonial.html', 
@@ -362,7 +359,6 @@ function construirMenuLateral(clientId) {
         const activeClass = paginaAtual === p.arquivo ? 'active fw-bold' : '';
         const urlCompleta = `${p.arquivo}?id=${clientId}`;
         
-        // Se bloqueado: Ícone de cadeado e chama o modal ao clicar
         if (isBloqueado) {
             html += `
             <a href="#" onclick="exibirModalPremium('modulo_bloqueado')" class="list-group-item list-group-item-action text-muted" style="opacity: 0.7;">
@@ -372,7 +368,6 @@ function construirMenuLateral(clientId) {
                 </div>
             </a>`;
         } else {
-            // Se liberado: Navegação normal
             html += `<a href="#" onclick="navegarPara('${urlCompleta}')" class="list-group-item list-group-item-action ${activeClass}"><i class="bi ${p.icone} me-2"></i> ${p.nome}</a>`;
         }
     });
